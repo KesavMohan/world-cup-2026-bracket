@@ -1,0 +1,911 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>World Cup 2026 — Teams, Cities &amp; Permutations</title>
+<style>
+  :root {
+    --bg: #0e1116;
+    --panel: #161b22;
+    --panel2: #1f2630;
+    --border: #2a313c;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --accent: #4f8cff;
+    --accent2: #ffbb33;
+    --good: #2ea043;
+    --warn: #d29922;
+    --bad: #f85149;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  header { padding: 20px 24px; border-bottom: 1px solid var(--border); background: linear-gradient(180deg, #1a2330 0%, #0e1116 100%); }
+  header h1 { margin: 0 0 4px; font-size: 22px; }
+  header p { margin: 0; color: var(--muted); font-size: 13px; }
+  .wrap { max-width: 1400px; margin: 0 auto; padding: 16px 24px 60px; }
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin: 16px 0 16px; }
+  .tab { padding: 10px 16px; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; font-size: 14px; }
+  .tab.active { color: var(--text); border-bottom-color: var(--accent); }
+  .tab:hover { color: var(--text); }
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+  .controls { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+  .controls label { color: var(--muted); font-size: 13px; }
+  select, input[type=text] {
+    background: var(--panel2); color: var(--text); border: 1px solid var(--border);
+    border-radius: 6px; padding: 6px 10px; font-size: 13px; min-width: 160px;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { background: var(--panel2); color: var(--muted); font-weight: 600; cursor: pointer; user-select: none; position: sticky; top: 0; }
+  th:hover { color: var(--text); }
+  th .arrow { color: var(--accent); margin-left: 4px; font-size: 11px; }
+  tbody tr:hover { background: rgba(79, 140, 255, 0.06); }
+  .group-pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; background: var(--accent); color: white; }
+  .group-pill.A{background:#e63946} .group-pill.B{background:#f4a261;color:#222} .group-pill.C{background:#2a9d8f}
+  .group-pill.D{background:#264653} .group-pill.E{background:#9b5de5} .group-pill.F{background:#00bbf9}
+  .group-pill.G{background:#fee440;color:#222} .group-pill.H{background:#f15bb5}
+  .group-pill.I{background:#06d6a0;color:#0a2233} .group-pill.J{background:#ef476f}
+  .group-pill.K{background:#118ab2} .group-pill.L{background:#073b4c}
+  .round-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; background: var(--panel2); color: var(--muted); border: 1px solid var(--border); }
+  .round-tag.r32 { background: #2d1f3a; border-color: #6b3fa0; color: #d6b3ff; }
+  .round-tag.r16 { background: #1f2a3a; border-color: #3f6ba0; color: #b3d1ff; }
+  .round-tag.qf  { background: #3a2a1f; border-color: #a06b3f; color: #ffd1b3; }
+  .round-tag.sf  { background: #1f3a2d; border-color: #3fa06b; color: #b3ffd1; }
+  .round-tag.f   { background: #3a1f1f; border-color: #a03f3f; color: #ffb3b3; }
+  .city { color: var(--text); font-weight: 500; }
+  .stadium { color: var(--muted); font-size: 12px; }
+  .conditional { color: var(--warn); font-style: italic; }
+  .small { font-size: 12px; color: var(--muted); }
+  .nowrap { white-space: nowrap; }
+  .matchcount { color: var(--muted); font-size: 12px; margin-left: 8px; }
+  details summary { cursor: pointer; color: var(--muted); font-size: 12px; margin-top: 8px; }
+  details summary:hover { color: var(--text); }
+
+  /* Team chips for multi-select */
+  .chip-area {
+    display: flex; flex-wrap: wrap; gap: 6px; min-height: 36px;
+    background: var(--panel2); border: 1px solid var(--border); border-radius: 6px;
+    padding: 6px 8px; margin-bottom: 12px;
+  }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--accent); color: white; border-radius: 999px;
+    padding: 3px 8px 3px 10px; font-size: 12px;
+  }
+  .chip .x { cursor: pointer; opacity: 0.8; padding: 0 2px; font-weight: bold; }
+  .chip .x:hover { opacity: 1; }
+  .chip .grp { background: rgba(0,0,0,0.25); border-radius: 8px; padding: 0 5px; font-size: 10px; }
+
+  /* Path display */
+  .path-flow {
+    display: flex; flex-wrap: wrap; gap: 0; align-items: stretch;
+    margin: 8px 0;
+  }
+  .path-step {
+    background: var(--panel2); border: 1px solid var(--border);
+    border-radius: 6px; padding: 8px 10px; min-width: 110px;
+    margin-right: 6px; margin-bottom: 6px;
+    position: relative;
+  }
+  .path-step .stage { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .path-step .city { font-size: 13px; font-weight: 600; display: block; margin-top: 2px; }
+  .path-step .stad { font-size: 11px; color: var(--muted); }
+  .path-step.r32 { border-left: 3px solid #6b3fa0; }
+  .path-step.r16 { border-left: 3px solid #3f6ba0; }
+  .path-step.qf  { border-left: 3px solid #a06b3f; }
+  .path-step.sf  { border-left: 3px solid #3fa06b; }
+  .path-step.f   { border-left: 3px solid #a03f3f; }
+  .path-step.t   { border-left: 3px solid #d29922; }
+
+  .path-card { background: var(--panel2); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 10px; }
+  .path-card h4 { margin: 0 0 6px; font-size: 13px; }
+  .path-card.first h4  { color: var(--good); }
+  .path-card.second h4 { color: var(--accent); }
+  .path-card.third h4  { color: var(--warn); }
+
+  .team-block { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 14px; }
+  .team-block h2 { margin: 0 0 4px; font-size: 17px; }
+
+  /* Meetings grid */
+  .meeting { background: var(--panel2); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+  .meeting h3 { margin: 0 0 8px; font-size: 14px; }
+  .meet-grid { border-collapse: collapse; font-size: 12px; }
+  .meet-grid th, .meet-grid td { border: 1px solid var(--border); padding: 6px 8px; text-align: center; min-width: 90px; vertical-align: middle; cursor: default; }
+  .meet-grid th { background: var(--panel); color: var(--muted); }
+  .meet-grid td.gs   { background: rgba(46,160,67,0.18); color: #b8f0c4; font-weight: 600; }
+  .meet-grid td.r32  { background: rgba(107,63,160,0.22); color: #d6b3ff; font-weight: 600; }
+  .meet-grid td.r16  { background: rgba(63,107,160,0.22); color: #b3d1ff; font-weight: 600; }
+  .meet-grid td.qf   { background: rgba(160,107,63,0.22); color: #ffd1b3; font-weight: 600; }
+  .meet-grid td.sf   { background: rgba(63,160,107,0.22); color: #b3ffd1; font-weight: 600; }
+  .meet-grid td.fnl  { background: rgba(160,63,63,0.30); color: #ffb3b3; font-weight: 600; }
+  .meet-grid td.no   { background: var(--panel); color: var(--muted); }
+  .meet-grid td.cond { background: rgba(210,153,34,0.18); color: #ffe1a3; font-style: italic; }
+  .meet-grid td .where { font-size: 10px; display: block; color: inherit; opacity: 0.85; font-weight: 400; }
+</style>
+</head>
+<body>
+<header>
+  <h1>FIFA World Cup 2026 — USA · Canada · Mexico</h1>
+  <p>June 11 – July 19, 2026 · 48 teams · 12 groups · 16 host cities · 104 matches</p>
+</header>
+
+<div class="wrap">
+
+  <div class="tabs">
+    <div class="tab active" data-tab="matches">All matches</div>
+    <div class="tab" data-tab="team">By team / Permutations</div>
+    <div class="tab" data-tab="city">By city</div>
+    <div class="tab" data-tab="groups">Groups</div>
+  </div>
+
+  <!-- ==================== MATCHES TAB ==================== -->
+  <section id="tab-matches">
+    <div class="panel">
+      <div class="controls">
+        <label>Filter team:
+          <select id="filterTeam"><option value="">All teams</option></select>
+        </label>
+        <label>Filter city:
+          <select id="filterCity"><option value="">All cities</option></select>
+        </label>
+        <label>Filter round:
+          <select id="filterRound">
+            <option value="">All rounds</option>
+            <option value="Group">Group stage</option>
+            <option value="R32">Round of 32</option>
+            <option value="R16">Round of 16</option>
+            <option value="QF">Quarterfinals</option>
+            <option value="SF">Semifinals</option>
+            <option value="3rd">Third-place</option>
+            <option value="Final">Final</option>
+          </select>
+        </label>
+        <label>Search:
+          <input type="text" id="searchBox" placeholder="team, city, stadium…">
+        </label>
+        <span class="matchcount" id="matchCount"></span>
+      </div>
+
+      <div style="overflow-x:auto">
+        <table id="matchesTable">
+          <thead>
+            <tr>
+              <th data-sort="date">Date</th>
+              <th data-sort="round">Round</th>
+              <th data-sort="group">Group</th>
+              <th data-sort="team1">Team 1</th>
+              <th data-sort="team2">Team 2</th>
+              <th data-sort="city">City</th>
+              <th data-sort="stadium">Stadium</th>
+              <th data-sort="country">Country</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="small" style="margin-top:10px">Click any column header to sort. Knockout rows show the seed slots (e.g. <em>Winner Group A</em>) until the group stage finishes.</p>
+    </div>
+  </section>
+
+  <!-- ==================== TEAM TAB ==================== -->
+  <section id="tab-team" hidden>
+    <div class="panel">
+      <h3 style="margin:0 0 6px;font-size:14px">Pick one or more teams</h3>
+      <p class="small" style="margin:0 0 10px">Add teams to see their full bracket path (Group → Final). With 2+ teams, you'll also see <em>where and when they could meet</em>.</p>
+      <div class="chip-area" id="chipArea"></div>
+      <label class="small">Add team:
+        <select id="teamPicker"><option value="">— select to add —</option></select>
+      </label>
+
+      <div id="teamPaths" style="margin-top:18px"></div>
+      <div id="teamMeetings" style="margin-top:18px"></div>
+    </div>
+  </section>
+
+  <!-- ==================== CITY TAB ==================== -->
+  <section id="tab-city" hidden>
+    <div class="panel">
+      <div class="controls">
+        <label>Pick a city:
+          <select id="cityPicker"></select>
+        </label>
+      </div>
+      <div id="cityDetail"></div>
+    </div>
+  </section>
+
+  <!-- ==================== GROUPS TAB ==================== -->
+  <section id="tab-groups" hidden>
+    <div class="panel">
+      <div id="groupsView"></div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+// ============================================================
+// DATA: 12 groups
+// ============================================================
+const GROUPS = {
+  A: ["Mexico", "South Africa", "South Korea", "Czechia"],
+  B: ["Canada", "Bosnia & Herzegovina", "Qatar", "Switzerland"],
+  C: ["Brazil", "Morocco", "Haiti", "Scotland"],
+  D: ["United States", "Paraguay", "Australia", "Türkiye"],
+  E: ["Germany", "Ivory Coast", "Ecuador", "Curaçao"],
+  F: ["Netherlands", "Sweden", "Tunisia", "Japan"],
+  G: ["Belgium", "Egypt", "Iran", "New Zealand"],
+  H: ["Spain", "Saudi Arabia", "Uruguay", "Cape Verde"],
+  I: ["France", "Senegal", "Iraq", "Norway"],
+  J: ["Argentina", "Algeria", "Austria", "Jordan"],
+  K: ["Portugal", "DR Congo", "Uzbekistan", "Colombia"],
+  L: ["England", "Croatia", "Ghana", "Panama"],
+};
+
+// ============================================================
+// DATA: cities
+// ============================================================
+const CITIES = {
+  "Atlanta":         { stadium: "Mercedes-Benz Stadium",            country: "USA" },
+  "Boston":          { stadium: "Gillette Stadium",                  country: "USA" },
+  "Dallas":          { stadium: "AT&T Stadium",                      country: "USA" },
+  "Houston":         { stadium: "NRG Stadium",                       country: "USA" },
+  "Kansas City":     { stadium: "GEHA Field at Arrowhead Stadium",   country: "USA" },
+  "Los Angeles":     { stadium: "SoFi Stadium",                      country: "USA" },
+  "Miami":           { stadium: "Hard Rock Stadium",                 country: "USA" },
+  "New York/NJ":     { stadium: "MetLife Stadium",                   country: "USA" },
+  "Philadelphia":    { stadium: "Lincoln Financial Field",           country: "USA" },
+  "San Francisco":   { stadium: "Levi's Stadium",                    country: "USA" },
+  "Seattle":         { stadium: "Lumen Field",                       country: "USA" },
+  "Toronto":         { stadium: "BMO Field",                         country: "Canada" },
+  "Vancouver":       { stadium: "BC Place",                          country: "Canada" },
+  "Guadalajara":     { stadium: "Estadio Akron",                     country: "Mexico" },
+  "Mexico City":     { stadium: "Estadio Azteca",                    country: "Mexico" },
+  "Monterrey":       { stadium: "Estadio BBVA",                      country: "Mexico" },
+};
+
+// ============================================================
+// DATA: group-stage matches (72 total)
+// ============================================================
+const GROUP_MATCHES = [
+  { date: "2026-06-11", group: "A", team1: "Mexico",        team2: "South Africa",  city: "Mexico City" },
+  { date: "2026-06-11", group: "A", team1: "South Korea",   team2: "Czechia",       city: "Guadalajara" },
+  { date: "2026-06-12", group: "B", team1: "Canada",        team2: "Bosnia & Herzegovina", city: "Toronto" },
+  { date: "2026-06-12", group: "D", team1: "United States", team2: "Paraguay",      city: "Los Angeles" },
+  { date: "2026-06-13", group: "B", team1: "Qatar",         team2: "Switzerland",   city: "San Francisco" },
+  { date: "2026-06-13", group: "C", team1: "Haiti",         team2: "Scotland",      city: "Boston" },
+  { date: "2026-06-13", group: "C", team1: "Brazil",        team2: "Morocco",       city: "New York/NJ" },
+  { date: "2026-06-13", group: "D", team1: "Australia",     team2: "Türkiye",       city: "Vancouver" },
+  { date: "2026-06-14", group: "E", team1: "Germany",       team2: "Curaçao",       city: "Houston" },
+  { date: "2026-06-14", group: "E", team1: "Ivory Coast",   team2: "Ecuador",       city: "Philadelphia" },
+  { date: "2026-06-14", group: "F", team1: "Netherlands",   team2: "Japan",         city: "Dallas" },
+  { date: "2026-06-14", group: "F", team1: "Sweden",        team2: "Tunisia",       city: "Monterrey" },
+  { date: "2026-06-15", group: "G", team1: "Belgium",       team2: "Egypt",         city: "Seattle" },
+  { date: "2026-06-15", group: "G", team1: "Iran",          team2: "New Zealand",   city: "Los Angeles" },
+  { date: "2026-06-15", group: "H", team1: "Spain",         team2: "Cape Verde",    city: "Atlanta" },
+  { date: "2026-06-15", group: "H", team1: "Saudi Arabia",  team2: "Uruguay",       city: "Miami" },
+  { date: "2026-06-16", group: "I", team1: "France",        team2: "Senegal",       city: "New York/NJ" },
+  { date: "2026-06-16", group: "I", team1: "Iraq",          team2: "Norway",        city: "Boston" },
+  { date: "2026-06-16", group: "J", team1: "Argentina",     team2: "Algeria",       city: "Kansas City" },
+  { date: "2026-06-16", group: "J", team1: "Austria",       team2: "Jordan",        city: "San Francisco" },
+  { date: "2026-06-17", group: "K", team1: "Portugal",      team2: "DR Congo",      city: "Houston" },
+  { date: "2026-06-17", group: "K", team1: "Uzbekistan",    team2: "Colombia",      city: "Mexico City" },
+  { date: "2026-06-17", group: "L", team1: "England",       team2: "Croatia",       city: "Dallas" },
+  { date: "2026-06-17", group: "L", team1: "Ghana",         team2: "Panama",        city: "Toronto" },
+  { date: "2026-06-18", group: "A", team1: "Mexico",        team2: "South Korea",   city: "Guadalajara" },
+  { date: "2026-06-18", group: "A", team1: "Czechia",       team2: "South Africa",  city: "Atlanta" },
+  { date: "2026-06-18", group: "B", team1: "Canada",        team2: "Qatar",         city: "Vancouver" },
+  { date: "2026-06-18", group: "B", team1: "Switzerland",   team2: "Bosnia & Herzegovina", city: "Los Angeles" },
+  { date: "2026-06-19", group: "C", team1: "Brazil",        team2: "Haiti",         city: "Philadelphia" },
+  { date: "2026-06-19", group: "C", team1: "Scotland",      team2: "Morocco",       city: "Boston" },
+  { date: "2026-06-19", group: "D", team1: "United States", team2: "Australia",     city: "Seattle" },
+  { date: "2026-06-19", group: "D", team1: "Türkiye",       team2: "Paraguay",      city: "San Francisco" },
+  { date: "2026-06-20", group: "E", team1: "Germany",       team2: "Ivory Coast",   city: "Toronto" },
+  { date: "2026-06-20", group: "E", team1: "Ecuador",       team2: "Curaçao",       city: "Kansas City" },
+  { date: "2026-06-20", group: "F", team1: "Netherlands",   team2: "Sweden",        city: "Houston" },
+  { date: "2026-06-20", group: "F", team1: "Tunisia",       team2: "Japan",         city: "Monterrey" },
+  { date: "2026-06-21", group: "G", team1: "Belgium",       team2: "Iran",          city: "Los Angeles" },
+  { date: "2026-06-21", group: "G", team1: "New Zealand",   team2: "Egypt",         city: "Vancouver" },
+  { date: "2026-06-21", group: "H", team1: "Spain",         team2: "Saudi Arabia",  city: "Atlanta" },
+  { date: "2026-06-21", group: "H", team1: "Uruguay",       team2: "Cape Verde",    city: "Miami" },
+  { date: "2026-06-22", group: "I", team1: "France",        team2: "Iraq",          city: "Philadelphia" },
+  { date: "2026-06-22", group: "I", team1: "Norway",        team2: "Senegal",       city: "New York/NJ" },
+  { date: "2026-06-22", group: "J", team1: "Argentina",     team2: "Austria",       city: "Dallas" },
+  { date: "2026-06-22", group: "J", team1: "Jordan",        team2: "Algeria",       city: "San Francisco" },
+  { date: "2026-06-23", group: "K", team1: "Portugal",      team2: "Uzbekistan",    city: "Houston" },
+  { date: "2026-06-23", group: "K", team1: "Colombia",      team2: "DR Congo",      city: "Guadalajara" },
+  { date: "2026-06-23", group: "L", team1: "England",       team2: "Ghana",         city: "Boston" },
+  { date: "2026-06-23", group: "L", team1: "Panama",        team2: "Croatia",       city: "Toronto" },
+  { date: "2026-06-24", group: "A", team1: "Czechia",       team2: "Mexico",        city: "Mexico City" },
+  { date: "2026-06-24", group: "A", team1: "South Africa",  team2: "South Korea",   city: "Monterrey" },
+  { date: "2026-06-24", group: "B", team1: "Switzerland",   team2: "Canada",        city: "Vancouver" },
+  { date: "2026-06-24", group: "B", team1: "Bosnia & Herzegovina", team2: "Qatar",  city: "Seattle" },
+  { date: "2026-06-24", group: "C", team1: "Scotland",      team2: "Brazil",        city: "Miami" },
+  { date: "2026-06-24", group: "C", team1: "Morocco",       team2: "Haiti",         city: "Atlanta" },
+  { date: "2026-06-25", group: "D", team1: "Türkiye",       team2: "United States", city: "Los Angeles" },
+  { date: "2026-06-25", group: "D", team1: "Paraguay",      team2: "Australia",     city: "San Francisco" },
+  { date: "2026-06-25", group: "E", team1: "Curaçao",       team2: "Ivory Coast",   city: "Philadelphia" },
+  { date: "2026-06-25", group: "E", team1: "Ecuador",       team2: "Germany",       city: "New York/NJ" },
+  { date: "2026-06-25", group: "F", team1: "Japan",         team2: "Sweden",        city: "Dallas" },
+  { date: "2026-06-25", group: "F", team1: "Tunisia",       team2: "Netherlands",   city: "Kansas City" },
+  { date: "2026-06-26", group: "G", team1: "New Zealand",   team2: "Belgium",       city: "Vancouver" },
+  { date: "2026-06-26", group: "G", team1: "Egypt",         team2: "Iran",          city: "Seattle" },
+  { date: "2026-06-26", group: "H", team1: "Cape Verde",    team2: "Saudi Arabia",  city: "Houston" },
+  { date: "2026-06-26", group: "H", team1: "Uruguay",       team2: "Spain",         city: "Guadalajara" },
+  { date: "2026-06-26", group: "I", team1: "Senegal",       team2: "Iraq",          city: "Toronto" },
+  { date: "2026-06-26", group: "I", team1: "Norway",        team2: "France",        city: "Boston" },
+  { date: "2026-06-27", group: "J", team1: "Jordan",        team2: "Argentina",     city: "Dallas" },
+  { date: "2026-06-27", group: "J", team1: "Algeria",       team2: "Austria",       city: "Kansas City" },
+  { date: "2026-06-27", group: "K", team1: "DR Congo",      team2: "Uzbekistan",    city: "Atlanta" },
+  { date: "2026-06-27", group: "K", team1: "Colombia",      team2: "Portugal",      city: "Miami" },
+  { date: "2026-06-27", group: "L", team1: "Croatia",       team2: "Ghana",         city: "Philadelphia" },
+  { date: "2026-06-27", group: "L", team1: "Panama",        team2: "England",       city: "New York/NJ" },
+];
+
+// ============================================================
+// DATA: knockout matches (Round of 32 → Final)
+// ============================================================
+const KNOCKOUT_MATCHES = [
+  // Round of 32 (M73-M88)
+  { date: "2026-06-28", round: "R32", id: "M73", team1: "Runner-up Group A", team2: "Runner-up Group B",       city: "Los Angeles" },
+  { date: "2026-06-29", round: "R32", id: "M74", team1: "Winner Group E",    team2: "3rd from A/B/C/D/F",      city: "Boston" },
+  { date: "2026-06-29", round: "R32", id: "M75", team1: "Winner Group C",    team2: "Runner-up Group F",       city: "Houston" },
+  { date: "2026-06-29", round: "R32", id: "M76", team1: "Winner Group F",    team2: "Runner-up Group C",       city: "Monterrey" },
+  { date: "2026-06-30", round: "R32", id: "M77", team1: "Winner Group A",    team2: "3rd from C/E/F/H/I",      city: "Mexico City" },
+  { date: "2026-06-30", round: "R32", id: "M78", team1: "Winner Group I",    team2: "3rd from C/D/F/G/H",      city: "New York/NJ" },
+  { date: "2026-06-30", round: "R32", id: "M79", team1: "Runner-up Group E", team2: "Runner-up Group I",       city: "Dallas" },
+  { date: "2026-07-01", round: "R32", id: "M80", team1: "Winner Group L",    team2: "3rd from E/H/I/J/K",      city: "Atlanta" },
+  { date: "2026-07-01", round: "R32", id: "M81", team1: "Winner Group G",    team2: "3rd from A/E/H/I/J",      city: "Seattle" },
+  { date: "2026-07-01", round: "R32", id: "M82", team1: "Winner Group D",    team2: "3rd from B/E/F/I/J",      city: "San Francisco" },
+  { date: "2026-07-02", round: "R32", id: "M83", team1: "Runner-up Group K", team2: "Runner-up Group L",       city: "Toronto" },
+  { date: "2026-07-02", round: "R32", id: "M84", team1: "Winner Group B",    team2: "3rd from E/F/G/I/J",      city: "Vancouver" },
+  { date: "2026-07-02", round: "R32", id: "M85", team1: "Winner Group H",    team2: "Runner-up Group J",       city: "Los Angeles" },
+  { date: "2026-07-03", round: "R32", id: "M86", team1: "Winner Group J",    team2: "Runner-up Group H",       city: "Miami" },
+  { date: "2026-07-03", round: "R32", id: "M87", team1: "Runner-up Group D", team2: "Runner-up Group G",       city: "Dallas" },
+  { date: "2026-07-03", round: "R32", id: "M88", team1: "Winner Group K",    team2: "3rd from D/E/I/J/L",      city: "Kansas City" },
+
+  // Round of 16 (M89-M96)
+  { date: "2026-07-04", round: "R16", id: "M89", team1: "Winner M73", team2: "Winner M75", city: "Houston" },
+  { date: "2026-07-04", round: "R16", id: "M90", team1: "Winner M74", team2: "Winner M77", city: "Philadelphia" },
+  { date: "2026-07-05", round: "R16", id: "M91", team1: "Winner M76", team2: "Winner M78", city: "New York/NJ" },
+  { date: "2026-07-05", round: "R16", id: "M92", team1: "Winner M79", team2: "Winner M80", city: "Mexico City" },
+  { date: "2026-07-06", round: "R16", id: "M93", team1: "Winner M81", team2: "Winner M82", city: "Seattle" },
+  { date: "2026-07-06", round: "R16", id: "M94", team1: "Winner M83", team2: "Winner M84", city: "Dallas" },
+  { date: "2026-07-07", round: "R16", id: "M95", team1: "Winner M85", team2: "Winner M87", city: "Vancouver" },
+  { date: "2026-07-07", round: "R16", id: "M96", team1: "Winner M86", team2: "Winner M88", city: "Atlanta" },
+
+  // Quarterfinals (M97-M100)
+  { date: "2026-07-09", round: "QF", id: "M97",  team1: "Winner M89", team2: "Winner M90", city: "Boston" },
+  { date: "2026-07-10", round: "QF", id: "M98",  team1: "Winner M93", team2: "Winner M94", city: "Los Angeles" },
+  { date: "2026-07-11", round: "QF", id: "M99",  team1: "Winner M91", team2: "Winner M92", city: "Miami" },
+  { date: "2026-07-11", round: "QF", id: "M100", team1: "Winner M95", team2: "Winner M96", city: "Kansas City" },
+
+  // Semifinals
+  { date: "2026-07-14", round: "SF", id: "SF1", team1: "Winner M97", team2: "Winner M98", city: "Dallas" },
+  { date: "2026-07-15", round: "SF", id: "SF2", team1: "Winner M99", team2: "Winner M100", city: "Atlanta" },
+
+  // Third-place playoff
+  { date: "2026-07-18", round: "3rd", id: "T", team1: "SF1 loser", team2: "SF2 loser", city: "Miami" },
+
+  // Final
+  { date: "2026-07-19", round: "Final", id: "F", team1: "SF1 winner", team2: "SF2 winner", city: "New York/NJ" },
+];
+
+// ============================================================
+// DATA: full bracket path for each (group, position)
+// Each path lists {stage, matchId, city} for R32 → R16 → QF → SF → Final/3rd
+// ============================================================
+const PATHS = {
+  // Group A
+  A1: [{stage:"R32",id:"M77",city:"Mexico City"}, {stage:"R16",id:"M90",city:"Philadelphia"}, {stage:"QF",id:"M97",city:"Boston"},      {stage:"SF",id:"SF1",city:"Dallas"}, {stage:"Final",id:"F",city:"New York/NJ"}, {stage:"3rd",id:"T",city:"Miami"}],
+  A2: [{stage:"R32",id:"M73",city:"Los Angeles"}, {stage:"R16",id:"M89",city:"Houston"},      {stage:"QF",id:"M97",city:"Boston"},      {stage:"SF",id:"SF1",city:"Dallas"}, {stage:"Final",id:"F",city:"New York/NJ"}, {stage:"3rd",id:"T",city:"Miami"}],
+  // Group B
+  B1: [{stage:"R32",id:"M84",city:"Vancouver"},   {stage:"R16",id:"M94",city:"Dallas"},       {stage:"QF",id:"M98",city:"Los Angeles"}, {stage:"SF",id:"SF1",city:"Dallas"}, {stage:"Final",id:"F",city:"New York/NJ"}, {stage:"3rd",id:"T",city:"Miami"}],
+  B2: [{stage:"R32",id:"M73",city:"Los Angeles"}, {stage:"R16",id:"M89",city:"Houston"},      {stage:"QF",id:"M97",city:"Boston"},      {stage:"SF",id:"SF1",city:"Dallas"}, {stage:"Final",id:"F",city:"New York/NJ"}, {stage:"3rd",id:"T",city:"Miami"}],
+  // Group C
+  C1: [{stage:"R32",id:"M75",city:"Houston"},     {stage:"R16",id:"M89",city:"Houston"},      {stage:"QF",id:"M97",city:"Boston"},      {stage:"SF",id:"SF1",city:"Dallas"}, {stage:"Final",id:"F",city:"New York/NJ"}, {stage:"3rd",id:"T",city:"Miami"}],
+  C2: [{stage:"R32",id:"M76",city:"Monterrey"},   {stage:"R16",id:"M91",city:"New York/NJ"},  {stage:"QF",id:"M99",city:"Miami"},       {stage:"SF",id:"SF2",city:"Atlanta"}, {stage:"Final",id:"F",city:"New York/NJ"}, {stage:"3rd",id:"T",city:"Miami"}],
+  // Group D
+  D1: [{stage:"R32",id:"M82",city:"San Francisco"}, {stage:"R16",id:"M93",city:"Seattle"},    {stage:"QF",id:"M98",city:"Los Angeles"}, {stage:"SF",id:"SF1",city:"Dallas"}, {stage:"Final",id:"F",city:"New York/NJ"}, {stage:"3rd",id:"T",city:"Miami"}],
+  D2: [{stage:"R32",id:"M87",city:"Dallas"},      {stage:"R16",id:"M95",city:"Vancouver"},    {stage:"QF",id:"M100",city:"Kansas City"},{stage:"SF",id:"SF2",city:"Atlanta"}, {stage:"Final",id:"F",city:"New York/NJ"}, {stage:"3rd",id:"T",city:"Miami"}],
+  // Group E
+  E1: [{stage:"R32",id:"M74",city:"Boston"},      {stage:"R16",id:"M90",city:"Philadelphia"}, {stage:"QF",id:"M97",city:"Boston"},      {stage:"SF",id:"SF1",city:"Dallas"}, {stage:"Final",id:"F",city:"New York/NJ"}, {stage:"3rd",id:"T",city:"Miami"}],
+  E2: [{stage:"R32",id:"M79",city:"Dallas"},      {stage:"R16",id:"M92",city:"Mexico City"},  {stage:"QF",id:"M99",city:"Miami"},       {stage:"SF",id:"SF2",city:"Atlanta"}, {stage:"Final",id:"F",city:"New York/NJ"}, {stage:"3rd",id:"T",city:"Miami"}],
+  // Group F
+  F1: [{stage:"R32",id:"M76",city:"Monterrey"},   {stage:"R16",id:"M91",city:"New York/NJ"},  {stage:"QF",id:"M99",city:"Miami"},       {stage:"SF",id:"SF2",city:"Atlanta"}, {stage:"Final",id:"F",city:"New York/NJ"}, {stage:"3rd",id:"T",city:"Miami"}],
+  F2: [{stage:"R32",id:"M75",city:"Houston"},     {stage:"R16",id:"M89",city:"Houston"},      {stage:"QF",id:"M97",city:"Boston"},      {stage:"SF",id:"SF1",city:"Dallas"}, {stage:"Final",id:"F",city:"New York/NJ"}, {stage:"3rd",id:"T",city:"Miami"}],
+  // Group G
+  G1: [{stage:"R32",id:"M81",city:"Seattle"},     {stage:"R16",id:"M93",city:"Seattle"},      {stage:"QF",id:"M98",city:"Los Angeles"}, {stage:"SF",id:"SF1",city:"Dallas"}, {stage:"Final",id:"F",city:"New York/NJ"}, {stage:"3rd",id:"T",city:"Miami"}],
+  G2: [{stage:"R32",id:"M87",city:"Dallas"},      {stage:"R16",id:"M95",city:"Vancouver"},    {stage:"QF",id:"M100",city:"Kansas City"},{stage:"SF",id:"SF2",city:"Atlanta"}, {stage:"Final",id:"F",city:"New York/NJ"}, {stage:"3rd",id:"T",city:"Miami"}],
+  // Group H
+  H1: [{stage:"R32",id:"M85",city:"Los Angeles"}, {stage:"R16",id:"M95",city:"Vancouver"},    {stage:"QF",id:"M100",city:"Kansas City"},{stage:"SF",id:"SF2",city:"Atlanta"}, {stage:"Final",id:"F",city:"New York/NJ"}, {stage:"3rd",id:"T",city:"Miami"}],
+  H2: [{stage:"R32",id:"M86",city:"Miami"},       {stage:"R16",id:"M96",city:"Atlanta"},      {stage:"QF",id:"M100",city:"Kansas City"},{stage:"SF",id:"SF2",city:"Atlanta"}, {stage:"Final",id:"F",city:"New York/NJ"}, {stage:"3rd",id:"T",city:"Miami"}],
+  // Group I
+  I1: [{stage:"R32",id:"M78",city:"New York/NJ"}, {stage:"R16",id:"M91",city:"New York/NJ"},  {stage:"QF",id:"M99",city:"Miami"},       {stage:"SF",id:"SF2",city:"Atlanta"}, {stage:"Final",id:"F",city:"New York/NJ"}, {stage:"3rd",id:"T",city:"Miami"}],
+  I2: [{stage:"R32",id:"M79",city:"Dallas"},      {stage:"R16",id:"M92",city:"Mexico City"},  {stage:"QF",id:"M99",city:"Miami"},       {stage:"SF",id:"SF2",city:"Atlanta"}, {stage:"Final",id:"F",city:"New York/NJ"}, {stage:"3rd",id:"T",city:"Miami"}],
+  // Group J
+  J1: [{stage:"R32",id:"M86",city:"Miami"},       {stage:"R16",id:"M96",city:"Atlanta"},      {stage:"QF",id:"M100",city:"Kansas City"},{stage:"SF",id:"SF2",city:"Atlanta"}, {stage:"Final",id:"F",city:"New York/NJ"}, {stage:"3rd",id:"T",city:"Miami"}],
+  J2: [{stage:"R32",id:"M85",city:"Los Angeles"}, {stage:"R16",id:"M95",city:"Vancouver"},    {stage:"QF",id:"M100",city:"Kansas City"},{stage:"SF",id:"SF2",city:"Atlanta"}, {stage:"Final",id:"F",city:"New York/NJ"}, {stage:"3rd",id:"T",city:"Miami"}],
+  // Group K
+  K1: [{stage:"R32",id:"M88",city:"Kansas City"}, {stage:"R16",id:"M96",city:"Atlanta"},      {stage:"QF",id:"M100",city:"Kansas City"},{stage:"SF",id:"SF2",city:"Atlanta"}, {stage:"Final",id:"F",city:"New York/NJ"}, {stage:"3rd",id:"T",city:"Miami"}],
+  K2: [{stage:"R32",id:"M83",city:"Toronto"},     {stage:"R16",id:"M94",city:"Dallas"},       {stage:"QF",id:"M98",city:"Los Angeles"}, {stage:"SF",id:"SF1",city:"Dallas"}, {stage:"Final",id:"F",city:"New York/NJ"}, {stage:"3rd",id:"T",city:"Miami"}],
+  // Group L
+  L1: [{stage:"R32",id:"M80",city:"Atlanta"},     {stage:"R16",id:"M92",city:"Mexico City"},  {stage:"QF",id:"M99",city:"Miami"},       {stage:"SF",id:"SF2",city:"Atlanta"}, {stage:"Final",id:"F",city:"New York/NJ"}, {stage:"3rd",id:"T",city:"Miami"}],
+  L2: [{stage:"R32",id:"M83",city:"Toronto"},     {stage:"R16",id:"M94",city:"Dallas"},       {stage:"QF",id:"M98",city:"Los Angeles"}, {stage:"SF",id:"SF1",city:"Dallas"}, {stage:"Final",id:"F",city:"New York/NJ"}, {stage:"3rd",id:"T",city:"Miami"}],
+};
+
+// 3rd-place possible R32 destinations (which then determine the rest of the path)
+const THIRD_R32_OPTIONS = {
+  A: [{id:"M74",city:"Boston"},     {id:"M81",city:"Seattle"}],
+  B: [{id:"M74",city:"Boston"},     {id:"M82",city:"San Francisco"}],
+  C: [{id:"M74",city:"Boston"},     {id:"M77",city:"Mexico City"}, {id:"M78",city:"New York/NJ"}],
+  D: [{id:"M74",city:"Boston"},     {id:"M78",city:"New York/NJ"}, {id:"M88",city:"Kansas City"}],
+  E: [{id:"M74",city:"Boston"},     {id:"M77",city:"Mexico City"}, {id:"M80",city:"Atlanta"}, {id:"M81",city:"Seattle"}, {id:"M82",city:"San Francisco"}, {id:"M84",city:"Vancouver"}, {id:"M88",city:"Kansas City"}],
+  F: [{id:"M74",city:"Boston"},     {id:"M77",city:"Mexico City"}, {id:"M78",city:"New York/NJ"}, {id:"M82",city:"San Francisco"}, {id:"M84",city:"Vancouver"}],
+  G: [{id:"M78",city:"New York/NJ"},{id:"M84",city:"Vancouver"}],
+  H: [{id:"M77",city:"Mexico City"},{id:"M78",city:"New York/NJ"}, {id:"M80",city:"Atlanta"},     {id:"M81",city:"Seattle"}],
+  I: [{id:"M77",city:"Mexico City"},{id:"M80",city:"Atlanta"},     {id:"M81",city:"Seattle"},     {id:"M82",city:"San Francisco"}, {id:"M84",city:"Vancouver"}, {id:"M88",city:"Kansas City"}],
+  J: [{id:"M80",city:"Atlanta"},    {id:"M81",city:"Seattle"},     {id:"M82",city:"San Francisco"}, {id:"M84",city:"Vancouver"}, {id:"M88",city:"Kansas City"}],
+  K: [{id:"M80",city:"Atlanta"}],
+  L: [{id:"M88",city:"Kansas City"}],
+};
+// For 3rd place, given the R32 match, the rest of the path is the same as
+// whatever team enters that R32 match. We derive on demand.
+
+// ============================================================
+// Build unified match list
+// ============================================================
+const ALL_MATCHES = [
+  ...GROUP_MATCHES.map(m => ({ ...m, round: "Group" })),
+  ...KNOCKOUT_MATCHES,
+].map(m => ({
+  ...m,
+  stadium: CITIES[m.city].stadium,
+  country: CITIES[m.city].country,
+}));
+
+// Match-id → match object lookup
+const MATCH_BY_ID = {};
+for (const m of KNOCKOUT_MATCHES) MATCH_BY_ID[m.id] = m;
+
+// Reverse-lookup: team → group letter
+const TEAM_TO_GROUP = {};
+for (const [g, teams] of Object.entries(GROUPS)) {
+  for (const t of teams) TEAM_TO_GROUP[t] = g;
+}
+const ALL_TEAMS = Object.keys(TEAM_TO_GROUP).sort();
+
+// ============================================================
+// Tab switching
+// ============================================================
+document.querySelectorAll(".tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    tab.classList.add("active");
+    document.querySelectorAll("section[id^=tab-]").forEach(s => s.hidden = true);
+    document.getElementById("tab-" + tab.dataset.tab).hidden = false;
+  });
+});
+
+// ============================================================
+// Helpers
+// ============================================================
+function fmtDate(iso) {
+  const d = new Date(iso + "T12:00:00");
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+function roundTagClass(r) {
+  if (r === "Group") return "";
+  if (r === "R32") return "r32";
+  if (r === "R16") return "r16";
+  if (r === "QF") return "qf";
+  if (r === "SF") return "sf";
+  if (r === "3rd") return "f";
+  if (r === "Final") return "f";
+  return "";
+}
+function roundLabel(r) {
+  return ({ Group: "Group", R32: "R32", R16: "R16", QF: "QF", SF: "Semi", "3rd": "3rd-place", Final: "Final" })[r] || r;
+}
+function pathStepClass(stage) {
+  return ({R32:"r32", R16:"r16", QF:"qf", SF:"sf", Final:"f", "3rd":"t"})[stage] || "";
+}
+function stageLabel(stage) {
+  return ({R32:"Round of 32", R16:"Round of 16", QF:"Quarter-final", SF:"Semi-final", Final:"Final", "3rd":"3rd-place"})[stage] || stage;
+}
+
+// Path for a 3rd-place team given the R32 match they end up in.
+// The rest of the path follows whichever (group, pos) primarily owns that R32 slot.
+function pathForThirdPlace(group, r32MatchId) {
+  // Find the (group,pos) primary owner of this R32 match
+  // (i.e. the 1st or 2nd place team that's slotted into the SAME match).
+  for (const [key, p] of Object.entries(PATHS)) {
+    if (p[0].id === r32MatchId) {
+      // Build a path starting with this 3rd-place's r32, then borrow the rest
+      const r32city = MATCH_BY_ID[r32MatchId].city;
+      return [{stage:"R32", id:r32MatchId, city:r32city}, ...p.slice(1)];
+    }
+  }
+  return null;
+}
+
+// All possible paths for a team. Returns array of {position, label, path[]}.
+function teamPaths(team) {
+  const g = TEAM_TO_GROUP[team];
+  const out = [];
+  out.push({ position: "1st", label: `1st in Group ${g}`, path: PATHS[g + "1"] });
+  out.push({ position: "2nd", label: `2nd in Group ${g}`, path: PATHS[g + "2"] });
+  for (const opt of THIRD_R32_OPTIONS[g]) {
+    out.push({
+      position: "3rd",
+      label: `3rd in Group ${g} → routed to ${opt.city}`,
+      path: pathForThirdPlace(g, opt.id),
+    });
+  }
+  return out;
+}
+
+// Find the earliest meeting between two paths (by matchId equality at the same stage).
+// Returns {stage, city, id} or null.
+function findPathMeeting(path1, path2) {
+  for (let i = 0; i < path1.length; i++) {
+    // Compare same-stage matches (R32 vs R32, R16 vs R16, etc.)
+    if (path1[i].id === path2[i].id) {
+      return { stage: path1[i].stage, city: path1[i].city, id: path1[i].id };
+    }
+  }
+  return null;
+}
+
+// Group-stage match between two same-group teams
+function groupStageMatchBetween(t1, t2) {
+  return GROUP_MATCHES.find(m =>
+    (m.team1 === t1 && m.team2 === t2) || (m.team1 === t2 && m.team2 === t1)
+  );
+}
+
+// ============================================================
+// MATCHES TABLE
+// ============================================================
+const tbody = document.querySelector("#matchesTable tbody");
+let sortKey = "date", sortDir = 1;
+
+function renderMatches() {
+  const teamF  = document.getElementById("filterTeam").value;
+  const cityF  = document.getElementById("filterCity").value;
+  const roundF = document.getElementById("filterRound").value;
+  const search = document.getElementById("searchBox").value.toLowerCase().trim();
+
+  let rows = ALL_MATCHES.filter(m => {
+    if (teamF  && m.team1 !== teamF && m.team2 !== teamF) return false;
+    if (cityF  && m.city !== cityF) return false;
+    if (roundF && m.round !== roundF) return false;
+    if (search) {
+      const blob = `${m.team1} ${m.team2} ${m.city} ${m.stadium} ${m.country} ${m.group||""}`.toLowerCase();
+      if (!blob.includes(search)) return false;
+    }
+    return true;
+  });
+
+  rows.sort((a, b) => {
+    let av = a[sortKey] ?? "", bv = b[sortKey] ?? "";
+    av = String(av); bv = String(bv);
+    if (av < bv) return -1 * sortDir;
+    if (av > bv) return  1 * sortDir;
+    if (sortKey !== "date") return a.date.localeCompare(b.date);
+    return 0;
+  });
+
+  tbody.innerHTML = rows.map(m => `
+    <tr>
+      <td class="nowrap">${fmtDate(m.date)}</td>
+      <td><span class="round-tag ${roundTagClass(m.round)}">${roundLabel(m.round)}</span></td>
+      <td>${m.group ? `<span class="group-pill ${m.group}">${m.group}</span>` : ""}</td>
+      <td class="${m.round === "Group" ? "" : "conditional"}">${m.team1}</td>
+      <td class="${m.round === "Group" ? "" : "conditional"}">${m.team2}</td>
+      <td class="city">${m.city}</td>
+      <td class="stadium">${m.stadium}</td>
+      <td class="small">${m.country}</td>
+    </tr>
+  `).join("");
+
+  document.getElementById("matchCount").textContent = `${rows.length} match${rows.length === 1 ? "" : "es"}`;
+
+  document.querySelectorAll("#matchesTable th").forEach(th => {
+    const arrow = th.querySelector(".arrow");
+    if (arrow) arrow.remove();
+    if (th.dataset.sort === sortKey) {
+      const span = document.createElement("span");
+      span.className = "arrow";
+      span.textContent = sortDir === 1 ? "▲" : "▼";
+      th.appendChild(span);
+    }
+  });
+}
+
+document.querySelectorAll("#matchesTable th").forEach(th => {
+  th.addEventListener("click", () => {
+    const k = th.dataset.sort;
+    if (sortKey === k) sortDir = -sortDir;
+    else { sortKey = k; sortDir = 1; }
+    renderMatches();
+  });
+});
+
+const fTeam = document.getElementById("filterTeam");
+ALL_TEAMS.forEach(t => fTeam.insertAdjacentHTML("beforeend", `<option>${t}</option>`));
+const fCity = document.getElementById("filterCity");
+Object.keys(CITIES).forEach(c => fCity.insertAdjacentHTML("beforeend", `<option>${c}</option>`));
+["filterTeam", "filterCity", "filterRound", "searchBox"].forEach(id => {
+  document.getElementById(id).addEventListener("input", renderMatches);
+});
+
+// ============================================================
+// TEAM TAB — multi-select with full paths and meetings
+// ============================================================
+const selectedTeams = new Set();
+const teamPicker = document.getElementById("teamPicker");
+ALL_TEAMS.forEach(t => teamPicker.insertAdjacentHTML("beforeend", `<option value="${t}">${t} (Group ${TEAM_TO_GROUP[t]})</option>`));
+
+teamPicker.addEventListener("change", () => {
+  const t = teamPicker.value;
+  if (t && !selectedTeams.has(t)) {
+    selectedTeams.add(t);
+    renderTeamTab();
+  }
+  teamPicker.value = "";
+});
+
+function removeTeam(t) {
+  selectedTeams.delete(t);
+  renderTeamTab();
+}
+window.removeTeam = removeTeam;
+
+function renderChips() {
+  const area = document.getElementById("chipArea");
+  if (selectedTeams.size === 0) {
+    area.innerHTML = `<span class="small" style="padding:4px 6px">No teams selected — pick from the dropdown below.</span>`;
+    return;
+  }
+  area.innerHTML = [...selectedTeams].map(t => {
+    const g = TEAM_TO_GROUP[t];
+    return `<span class="chip"><span class="grp">${g}</span>${t}<span class="x" onclick="removeTeam('${t.replace(/'/g,"\\'")}')">×</span></span>`;
+  }).join("");
+}
+
+function pathStepHTML(step) {
+  const stad = CITIES[step.city] ? CITIES[step.city].stadium : "";
+  return `<div class="path-step ${pathStepClass(step.stage)}">
+    <div class="stage">${stageLabel(step.stage)}</div>
+    <span class="city">${step.city}</span>
+    <span class="stad">${stad}</span>
+  </div>`;
+}
+
+function renderOneTeam(team) {
+  const g = TEAM_TO_GROUP[team];
+  const groupMatches = GROUP_MATCHES.filter(m => m.team1 === team || m.team2 === team);
+
+  const groupHTML = groupMatches.map(m => {
+    const opp = m.team1 === team ? m.team2 : m.team1;
+    return `<tr>
+      <td class="nowrap">${fmtDate(m.date)}</td>
+      <td>${opp}</td>
+      <td class="city">${m.city}</td>
+      <td class="stadium">${CITIES[m.city].stadium}, ${CITIES[m.city].country}</td>
+    </tr>`;
+  }).join("");
+
+  // 1st-place full path
+  const p1 = PATHS[g + "1"];
+  const p2 = PATHS[g + "2"];
+
+  // 3rd-place: list each possible R32 destination + its full path
+  const thirdOptions = THIRD_R32_OPTIONS[g];
+
+  const firstPathHTML = p1.map(pathStepHTML).join("");
+  const secondPathHTML = p2.map(pathStepHTML).join("");
+  const thirdHTML = thirdOptions.map(opt => {
+    const path = pathForThirdPlace(g, opt.id);
+    return `<div style="margin-bottom:10px">
+      <div class="small" style="margin-bottom:4px;color:#ffe1a3">Path if routed to ${opt.city} (R32):</div>
+      <div class="path-flow">${path.map(pathStepHTML).join("")}</div>
+    </div>`;
+  }).join("");
+
+  // Possible cities summary
+  const allCitiesIfFirst = [...new Set(p1.filter(s => s.stage !== "3rd").map(s => s.city))];
+  const allCitiesIfSecond = [...new Set(p2.filter(s => s.stage !== "3rd").map(s => s.city))];
+
+  return `
+  <div class="team-block">
+    <h2>${team} <span class="group-pill ${g}" style="margin-left:8px">Group ${g}</span></h2>
+    <p class="small" style="margin:0 0 10px">Group opponents: ${GROUPS[g].filter(t => t !== team).join(", ")}</p>
+
+    <h4 style="margin:12px 0 6px;font-size:13px">Group-stage matches</h4>
+    <table>
+      <thead><tr><th>Date</th><th>Opponent</th><th>City</th><th>Stadium</th></tr></thead>
+      <tbody>${groupHTML}</tbody>
+    </table>
+
+    <h4 style="margin:18px 0 4px;font-size:13px">Knockout-stage paths</h4>
+    <p class="small" style="margin:0 0 10px">Each path is the venue sequence <em>if ${team} keeps winning</em>. The Final is at <strong>New York/NJ</strong>; the 3rd-place playoff is at <strong>Miami</strong> (only if they reach the SF and lose).</p>
+
+    <div class="path-card first">
+      <h4>If 1st in Group ${g}</h4>
+      <div class="path-flow">${firstPathHTML}</div>
+      <p class="small" style="margin:6px 0 0">Cities they could play in (R32 → Final): ${allCitiesIfFirst.join(" · ")}</p>
+    </div>
+
+    <div class="path-card second">
+      <h4>If 2nd in Group ${g}</h4>
+      <div class="path-flow">${secondPathHTML}</div>
+      <p class="small" style="margin:6px 0 0">Cities they could play in (R32 → Final): ${allCitiesIfSecond.join(" · ")}</p>
+    </div>
+
+    <div class="path-card third">
+      <h4>If 3rd in Group ${g} (and one of the 8 best 3rd-placed teams)</h4>
+      <p class="small" style="margin:0 0 8px">FIFA assigns 3rd-placed teams to bracket slots based on <em>which</em> 8 of the 12 third-placed groups produce qualifying teams. Each possible R32 routing leads to a deterministic rest-of-bracket:</p>
+      ${thirdHTML}
+    </div>
+  </div>`;
+}
+
+// Build a 3x3 cell label for two paths: row = team1 finish (1/2/3), col = team2 finish
+function meetingLabel(team1, team2, p1Pos, p2Pos) {
+  const g1 = TEAM_TO_GROUP[team1], g2 = TEAM_TO_GROUP[team2];
+
+  // Same-group case
+  if (g1 === g2) {
+    const m = groupStageMatchBetween(team1, team2);
+    if (m) {
+      return { cls: "gs", label: "Group", where: `${m.city} · ${fmtDate(m.date)}` };
+    }
+    return { cls: "no", label: "—", where: "" };
+  }
+
+  // Different groups: enumerate possible paths for the chosen positions and find earliest meeting
+  const paths1 = (p1Pos === "3" )
+    ? THIRD_R32_OPTIONS[g1].map(opt => pathForThirdPlace(g1, opt.id))
+    : [PATHS[g1 + p1Pos]];
+  const paths2 = (p2Pos === "3" )
+    ? THIRD_R32_OPTIONS[g2].map(opt => pathForThirdPlace(g2, opt.id))
+    : [PATHS[g2 + p2Pos]];
+
+  const meetings = [];
+  for (const a of paths1) {
+    for (const b of paths2) {
+      const m = findPathMeeting(a, b);
+      if (m) meetings.push(m);
+    }
+  }
+
+  if (meetings.length === 0) {
+    return { cls: "no", label: "Never", where: "(opposite halves)" };
+  }
+  // Find earliest stage among all meetings
+  const stageOrder = ["R32","R16","QF","SF","Final","3rd"];
+  meetings.sort((a,b) => stageOrder.indexOf(a.stage) - stageOrder.indexOf(b.stage));
+  const earliest = meetings[0];
+  const cls = ({R32:"r32",R16:"r16",QF:"qf",SF:"sf",Final:"fnl","3rd":"fnl"})[earliest.stage];
+  // If 3rd-place involved (uncertain), tag as conditional
+  const isConditional = (p1Pos === "3" || p2Pos === "3");
+  // Distinct cities across all earliest-stage meetings:
+  const earliestStageCities = [...new Set(meetings.filter(m => m.stage === earliest.stage).map(m => m.city))];
+  return {
+    cls: isConditional ? "cond" : cls,
+    label: stageLabel(earliest.stage),
+    where: earliestStageCities.join(" / "),
+  };
+}
+
+function renderMeetingPair(t1, t2) {
+  const cells = [];
+  const positions = ["1","2","3"];
+  // Build a 3×3 table
+  let html = `<div class="meeting"><h3>${t1} <span class="small">(${TEAM_TO_GROUP[t1]})</span> &nbsp;×&nbsp; ${t2} <span class="small">(${TEAM_TO_GROUP[t2]})</span></h3>`;
+  html += `<table class="meet-grid"><thead><tr><th>${t1} ↓ / ${t2} →</th>`;
+  positions.forEach(p => html += `<th>${p}${p === "1" ? "st" : p === "2" ? "nd" : "rd"} in ${TEAM_TO_GROUP[t2]}</th>`);
+  html += `</tr></thead><tbody>`;
+  for (const r of positions) {
+    html += `<tr><th>${r}${r === "1" ? "st" : r === "2" ? "nd" : "rd"} in ${TEAM_TO_GROUP[t1]}</th>`;
+    for (const c of positions) {
+      const cell = meetingLabel(t1, t2, r, c);
+      html += `<td class="${cell.cls}" title="${cell.where}">${cell.label}<span class="where">${cell.where}</span></td>`;
+    }
+    html += `</tr>`;
+  }
+  html += `</tbody></table>`;
+  html += `<p class="small" style="margin:8px 0 0">Each cell shows the <em>earliest possible meeting</em>: e.g. "Semi · Atlanta" means if both teams finish in those positions and keep winning, the first time they could face each other is the semifinal. "Never (opposite halves)" means the bracket keeps them apart through the final. Yellow cells involve a 3rd-place finish, which depends on which 8 of the 12 third-placed teams qualify.</p>`;
+  html += `</div>`;
+  return html;
+}
+
+function renderTeamTab() {
+  renderChips();
+  const teams = [...selectedTeams];
+  const pathsDiv = document.getElementById("teamPaths");
+  const meetingsDiv = document.getElementById("teamMeetings");
+
+  if (teams.length === 0) {
+    pathsDiv.innerHTML = "";
+    meetingsDiv.innerHTML = "";
+    return;
+  }
+
+  pathsDiv.innerHTML = `<h3 style="margin:6px 0 8px;font-size:14px">Per-team paths</h3>` +
+    teams.map(renderOneTeam).join("");
+
+  if (teams.length >= 2) {
+    let html = `<h3 style="margin:6px 0 8px;font-size:14px">Where could they meet?</h3>`;
+    for (let i = 0; i < teams.length; i++) {
+      for (let j = i + 1; j < teams.length; j++) {
+        html += renderMeetingPair(teams[i], teams[j]);
+      }
+    }
+    meetingsDiv.innerHTML = html;
+  } else {
+    meetingsDiv.innerHTML = "";
+  }
+}
+
+// Default: pre-select Spain so the page loads with content
+selectedTeams.add("Spain");
+renderTeamTab();
+
+// ============================================================
+// CITY TAB
+// ============================================================
+const cityPicker = document.getElementById("cityPicker");
+Object.keys(CITIES).forEach(c => cityPicker.insertAdjacentHTML("beforeend", `<option>${c}</option>`));
+cityPicker.addEventListener("change", renderCity);
+
+function renderCity() {
+  const city = cityPicker.value;
+  const info = CITIES[city];
+  const matches = ALL_MATCHES.filter(m => m.city === city).sort((a, b) => a.date.localeCompare(b.date));
+  const rows = matches.map(m => `
+    <tr>
+      <td class="nowrap">${fmtDate(m.date)}</td>
+      <td><span class="round-tag ${roundTagClass(m.round)}">${roundLabel(m.round)}</span></td>
+      <td>${m.group ? `<span class="group-pill ${m.group}">${m.group}</span>` : ""}</td>
+      <td class="${m.round === "Group" ? "" : "conditional"}">${m.team1} vs ${m.team2}</td>
+    </tr>`).join("");
+
+  document.getElementById("cityDetail").innerHTML = `
+    <h2 style="margin:6px 0 4px">${city} <span class="small">· ${info.country}</span></h2>
+    <p class="small">${info.stadium} · ${matches.length} matches</p>
+    <table>
+      <thead><tr><th>Date</th><th>Round</th><th>Group</th><th>Match</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+}
+cityPicker.value = "Los Angeles";
+renderCity();
+
+// ============================================================
+// GROUPS TAB
+// ============================================================
+function renderGroups() {
+  const html = Object.entries(GROUPS).map(([g, teams]) => {
+    return `<div style="background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:12px">
+      <h3 style="margin:0 0 8px"><span class="group-pill ${g}">Group ${g}</span></h3>
+      <ul style="list-style:none;padding-left:0;margin:6px 0 0">
+        ${teams.map(t => `<li style="padding:2px 0">${t}</li>`).join("")}
+      </ul>
+    </div>`;
+  }).join("");
+  document.getElementById("groupsView").innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px">${html}</div>
+  `;
+}
+renderGroups();
+
+// initial render
+renderMatches();
+</script>
+</body>
+</html>
