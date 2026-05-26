@@ -1,0 +1,28 @@
+{
+  "name": "world-cup-2026-bracket",
+  "version": "1.0.0",
+  "description": "FIFA World Cup 2026 bracket and schedule explorer with Vercel Analytics",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "build": "esbuild analytics.js --bundle --outfile=dist/analytics.min.js --format=iife --minify",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KesavMohan/world-cup-2026-bracket.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/KesavMohan/world-cup-2026-bracket/issues"
+  },
+  "homepage": "https://github.com/KesavMohan/world-cup-2026-bracket#readme",
+  "dependencies": {
+    "@vercel/analytics": "^2.0.1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.0"
+  }
+}
